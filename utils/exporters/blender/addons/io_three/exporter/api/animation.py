@@ -60,6 +60,13 @@ def _parse_rest_action(action, armature, options):
     :param options:
 
     """
+    # set armature to REST if necessary
+    current_pose_position = None
+    if armature.data.pose_position != 'REST':
+        current_pose_position = armature.data.pose_position
+        armature.data.pose_position = 'REST'
+        context.scene.update()
+
     end_frame = action.frame_range[1]
     start_frame = action.frame_range[0]
     frame_length = end_frame - start_frame
@@ -152,6 +159,12 @@ def _parse_rest_action(action, armature, options):
         })
         parent_index += 1
 
+    # set previous pose position
+    if current_pose_position is not None:
+        current_pose_position = armature.data.pose_position
+        armature.data.pose_position = current_pose_position
+        context.scene.update()
+
     animation = {
         constants.HIERARCHY: hierarchy,
         constants.LENGTH: frame_length / fps,
@@ -170,28 +183,16 @@ def _parse_pose_action(action, armature, options):
     :param options:
 
     """
-    try:
-        current_context = context.area.type
-    except AttributeError:
-        for window in context.window_manager.windows:
-            screen = window.screen
-            for area in screen.areas:
-                if area.type != 'VIEW_3D':
-                    continue
+    # set armature to POSE if necessary
+    current_pose_position = None
+    if armature.data.pose_position != 'POSE':
+        current_pose_position = armature.data.pose_position
+        armature.data.pose_position = 'POSE'
+        context.scene.update()
 
-                override = {
-                    'window': window,
-                    'screen': screen,
-                    'area': area
-                }
-                ops.screen.screen_full_area(override)
-                break
-        current_context = context.area.type
-
-    context.scene.objects.active = armature
-    context.area.type = 'DOPESHEET_EDITOR'
-    context.space_data.mode = 'ACTION'
-    context.area.spaces.active.action = action
+    # store current action value so we can restore it later
+    current_action = armature.animation_data.action
+    armature.animation_data.action = action
 
     armature_matrix = armature.matrix_world
     fps = context.scene.render.fps
@@ -333,7 +334,15 @@ def _parse_pose_action(action, armature, options):
         frame_length = frame_length / fps
 
     context.scene.frame_set(start_frame)
-    context.area.type = current_context
+
+    # restore previous action
+    armature.animation_data.action = current_action
+
+    # set previous pose position
+    if current_pose_position is not None:
+        current_pose_position = armature.data.pose_position
+        armature.data.pose_position = current_pose_position
+        context.scene.update()
 
     animation = {
         constants.HIERARCHY: hierarchy,
