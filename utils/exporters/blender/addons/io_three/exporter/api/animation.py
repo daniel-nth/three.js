@@ -161,7 +161,6 @@ def _parse_rest_action(action, armature, options):
 
     # set previous pose position
     if current_pose_position is not None:
-        current_pose_position = armature.data.pose_position
         armature.data.pose_position = current_pose_position
         context.scene.update()
 
@@ -340,7 +339,6 @@ def _parse_pose_action(action, armature, options):
 
     # set previous pose position
     if current_pose_position is not None:
-        current_pose_position = armature.data.pose_position
         armature.data.pose_position = current_pose_position
         context.scene.update()
 
